@@ -1,0 +1,48 @@
+{
+  "categories": [
+    "Одежда",
+    "Обувь", 
+    "Бытовая техника",
+    "Мебель",
+    "Игры",
+    "Электроника"
+  ],
+  "products": [
+    {
+      "name": "Холодильник NORD FRB 721 W",
+      "description": "Двухкамерный отдельностоящий с нижним расположением морозильной камеры имеет общий объем 240 л.",
+      "price": 21966,
+      "category": "Бытовая техника"
+    },
+    {
+      "name": "VGN Игровая мышь",
+      "description": "беспроводная, черно-серый",
+      "price": 2960,
+      "category": "Электроника"
+    },
+    {
+      "name": "Кеды T.TACCARDI",
+      "description": "женские бежевые дышащие",
+      "price": 1259,
+      "category": "Обувь"
+    },
+    {
+      "name": "Игра God of War 3",
+      "description": "Обновленная версия (Хиты PlayStation) (PlayStation 4, PlayStation 5, PlayStation 5 Pro, Русская версия)",
+      "price": 1974,
+      "category": "Игры"
+    },
+    {
+      "name": "Кроссовки Nike",
+      "description": "Спортивная обувь",
+      "price": 8535,
+      "category": "Обувь"
+    },
+    {
+      "name": "Джинсы Levi's",
+      "description": "Классические джинсы",
+      "price": 6579,
+      "category": "Одежда"
+    }
+  ]
+}
