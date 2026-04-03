@@ -1,89 +1,68 @@
-from fastapi import FastAPI, Query, Path, HTTPException
-from fastapi.responses import JSONResponse
-import random
-import math
-from enum import Enum
+from fastapi import FastAPI
+from classes import CreateProduct
+from typing import Annotated
+from models import *
+from db import create_db_and_tables, SessionDep
+
+from fastapi import FastAPI, HTTPException, Query
+from sqlmodel import select
 
 app = FastAPI()
 
 
-class Values(str, Enum):
-    C = ("celsius",)
-    F = "fahrenheit"
+count = 0
+data = []
 
 
-@app.get("/about")
-def about():
-    student = {
-        "FullName": "Хадиулин Дамир Маратович",
-        "Group": "Т-333901-ИСТ",
-        "Course": "3",
-        "University": "НТИ УрФу",
-        "GitHub": "https://github.com/R1V3NG",
-    }
-    return JSONResponse(content=student, media_type="application/json; charset=utf-8")
+@app.get("/main")
+def main():
+    global count
+    count += 1
+    return {"hello": count}
 
 
-@app.get("/rnd")
-def rnd(
-    min: int = Query(1, description="Минимальное значение диапазона"),
-    max: int = Query(100, description="Максимальное значение диапазона"),
-):
-    if min > max:
-        raise HTTPException(
-            status_code=400,
-            detail="Минимальное значение не может быть больше максимального",
-        )
-    random_number = random.randint(min, max)
-
-    return random_number
+@app.post("/product")
+def add_product(product: CreateProduct):
+    data.append(product)
+    return data
 
 
-@app.post("/t_square/")
-def t_square(
-    a: float = Query(..., gt=0, description="Первая сторона треугольника"),
-    b: float = Query(..., gt=0, description="Вторая сторона треугольника"),
-    c: float = Query(..., gt=0, description="Третья сторона треугольника"),
-):
-    if not (a + b > c and a + c > b and b + c > a):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Треугольник со сторонами {a}, {b}, {c} не существует. "
-            f"Сумма двух любых сторон должна быть больше третьей.",
-        )
-
-    perimeter = a + b + c
-    p = perimeter / 2
-    area = math.sqrt(p * (p - a) * (p - b) * (p - c))
-    print(a, b, c, p)
-    return f"Периметр треугольника равен {perimeter}, а площадь равна {area}"
+@app.on_event("startup")
+def on_startup():
+    create_db_and_tables()
 
 
-@app.get("/convert/{from_unit}/{to_unit}/{value}")
-def convert(from_unit: Values, to_unit: Values, value: float):
-    if from_unit == Values.C and to_unit == Values.F:
-        result = (value * 9 / 5) + 32
-        return {
-            "result": result,
-            "from_value": value,
-            "from_unit": from_unit.value,
-            "to_unit": to_unit.value,
-            "formatted": f"{round(value)}°C = {round(result)}°F",
-        }
-    elif from_unit == Values.F and to_unit == Values.C:
-        result = (value - 32) * 5 / 9
-        return {
-            "result": result,
-            "from_value": value,
-            "from_unit": from_unit.value,
-            "to_unit": to_unit.value,
-            "formatted": f"{round(value)}°F = {round(result)}°C",
-        }
-    elif from_unit == to_unit:
-        return {
-            "result": value,
-            "from_value": value,
-            "from_unit": from_unit.value,
-            "to_unit": to_unit.value,
-            "formatted": f"{round(value)}° {from_unit.value} = {round(value)}° {from_unit.value}",
-        }
+@app.post("/heroes")
+def create_hero(hero: Hero, session: SessionDep) -> Hero:
+    session.add(hero)
+    session.commit()
+    session.refresh(hero)
+    return hero
+
+
+@app.get("/heroes")
+def read_heroes(
+    session: SessionDep,
+    offset: int = 0,
+    limit: Annotated[int, Query(le=100)] = 100,
+) -> list[Hero]:
+    heroes = session.exec(select(Hero).offset(offset).limit(limit)).all()
+    return heroes
+
+
+@app.get("/heroes/{hero_id}")
+def read_hero(hero_id: int, session: SessionDep) -> Hero:
+    hero = session.get(Hero, hero_id)
+    if not hero:
+        raise HTTPException(status_code=404, detail="Hero not found")
+    return hero
+
+
+@app.delete("/heroes/{hero_id}")
+def delete_hero(hero_id: int, session: SessionDep):
+    hero = session.get(Hero, hero_id)
+    if not hero:
+        raise HTTPException(status_code=404, detail="Hero not found")
+    session.delete(hero)
+    session.commit()
+    return {"ok": True}
