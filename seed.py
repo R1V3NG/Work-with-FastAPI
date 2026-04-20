@@ -1,31 +1,37 @@
-import json
-import db
 import models
+from datetime import datetime, timedelta
 
-db.create_db_and_tables()
+models.db.create_db_and_tables()
 
-with open('products.json', 'r', encoding='utf-8') as file:
-    data = json.load(file)
+with models.db.Session(models.db.engine) as session:
+    user1 = models.Users(name="user", password="password-user")
+    user2 = models.Users(name="admin", password="password-admin")
+    session.add(user1)
+    session.add(user2)
+    session.commit()
+    session.refresh(user1)
+    session.refresh(user2)
 
-with db.Session(db.engine) as s:
-    categories_dict = {}
-    
-    for category_name in data['categories']:
-        category = models.Category(name=category_name)
-        s.add(category)
-        categories_dict[category_name] = category
-    
-    s.commit()
-    
-    for product_data in data['products']:
-        category = categories_dict.get(product_data['category'])
-        
-        if category:
-            product = models.Product(
-                name=product_data['name'],
-                description=product_data.get('description', ''),
-                price=product_data['price'],
-                category=category
-            )
-            s.add(product)
-    s.commit()
+    task1 = models.Tasks(
+        title="Купить продукты",
+        priority=models.Priority.MEDIUM,
+        deadline=datetime.now() + timedelta(days=2),
+        description="Молоко, хлеб, яйца",
+        user_id=user1.id
+    )
+    task2 = models.Tasks(
+        title="Сдать отчёт",
+        priority=models.Priority.HIGH,
+        deadline=datetime.now() + timedelta(days=1),
+        description="Подготовить презентацию",
+        user_id=user1.id
+    )
+    task3 = models.Tasks(
+        title="Почитать книгу",
+        priority=models.Priority.LOW,
+        deadline=datetime.now() + timedelta(days=5),
+        description="Закончить главу 3",
+        user_id=user2.id
+    )
+    session.add_all([task1, task2, task3])
+    session.commit()
